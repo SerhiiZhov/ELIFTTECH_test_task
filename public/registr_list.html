@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Registr List</title>
+    <link rel="stylesheet" href="./css/style.min.css?_V=20240928095615" />
+  </head>
+  <body>
+    <section class="section">
+      <div class="container">
+        <div class="events">
+          <div class="registr_list__wrapper">
+            <div class="registr_list__title title">Registered users</div>
+            <input
+              type="text"
+              class="registr_list__searchInput"
+              placeholder="Search by name or email"
+            />
+            <a class="registr_list__btn" href="index.html">Start page</a>
+          </div>
+          <div class="registr_list__list_w">
+            <div class="registr_list__list"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <script>
+      let users = [];
+
+      async function loadUsers() {
+        try {
+          const urlParams = new URLSearchParams(window.location.search);
+          const Id = urlParams.get("postId");
+
+          const response = await fetch(
+           `/api/user_list?postId=${Id}`
+          );
+
+          const posts = await response.json();
+
+          users = posts;
+
+          displayUsers(users);
+        } catch (error) {
+          console.error("Ошибка загрузки постов:", error);
+        }
+      }
+
+      function displayUsers(filteredUsers) {
+        const postsContainer = document.querySelector(".registr_list__list");
+        postsContainer.innerHTML = "";
+
+        filteredUsers.forEach((user) => {
+          postsContainer.insertAdjacentHTML(
+            "beforeend",
+            `
+                    <div class="registr_list__item_w">
+                        <div class="registr_list__item">
+                            <h2 class="registr_list__item_title">${user.name}</h2>
+                            <div class="registr_list__item_email">${user.email}</div>
+                        </div>
+                    </div>
+                `
+          );
+        });
+      }
+
+      function filterUsers(event) {
+        const searchTerm = event.target.value.toLowerCase();
+
+        const filteredUsers = users.filter(
+          (user) =>
+            user.name.toLowerCase().includes(searchTerm) ||
+            user.email.toLowerCase().includes(searchTerm)
+        );
+
+        displayUsers(filteredUsers);
+      }
+
+      document
+        .querySelector(".registr_list__searchInput")
+        .addEventListener("input", filterUsers);
+
+      window.onload = loadUsers;
+    </script>
+  </body>
+</html>

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration</title>
+    <link rel="stylesheet" href="./css/style.min.css?_V=20240928095615">
+</head>
+<body>
+    <section class="section">
+        <div class="container">
+            <div class="registr">
+                <div class="registr__title title">Event registrations</div>
+                <form class="registr__form" action="">
+                    <label for="name">Full name</label>
+                    <input minlength="3" type="text" name="name" id="name">
+                    <div class="error" id="nameError"></div>
+
+                    <label for="email">Email</label>
+                    <input  type="email" name="email" id="email">
+                    <div class="error" id="emailError"></div>
+
+                    <label for="date">Date of birth</label>
+                    <input  type="date" name="date" id="date">
+                    <div class="error" id="dateError"></div>
+                    <input type="hidden" id="currentDate" />
+
+                    <fieldset>
+                        <legend>Where did you hear about this event?</legend>
+                        <label for="social_radio">
+                            <input title="hi" required type="radio" value="Social network" name="form" id="social_radio">Social networks
+                        </label>
+                        <label for="friends_radio">
+                            <input title="hi" required type="radio" value="Friends" name="form" id="friends_radio">Friends
+                        </label>
+                        <label for="myself_radio">
+                            <input title="hi" required type="radio" value="Found myself" name="form" id="myself_radio">Found myself
+                        </label>
+                    </fieldset>
+
+                    <button type="submit">Registration</button>
+                </form>
+            </div>
+        </div>
+    </section>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const currentDateInput = document.getElementById('currentDate');
+            const today = new Date().toISOString().split('T')[0];
+            currentDateInput.value = today;
+
+            const dateInput = document.getElementById('date');
+
+            const nameInput = document.getElementById('name');
+            const nameError = document.getElementById('nameError');
+
+            nameInput.addEventListener('input', () => {
+                const regex = /^[A-Za-zА-Яа-яЁёІіЇїЄє'-.,\s]+$/;
+                if (nameInput.value.length < 3 || !regex.test(nameInput.value)) {
+                    nameError.textContent = 'The name must contain a minimum of 3 letters and may include “-”, “.”, “,” whithout numbers';
+                    nameInput.classList.add('invalid');
+                    nameInput.classList.remove('valid');
+                } else {
+                    nameError.textContent = '';
+                    nameInput.classList.remove('invalid');
+                    nameInput.classList.add('valid');
+                }
+            });
+
+            const emailInput = document.getElementById('email');
+            const emailError = document.getElementById('emailError');
+
+            emailInput.addEventListener('input', () => {
+                const regex = /^[A-Za-z0-9._%+-]+@lets\.study$/;
+                if (!regex.test(emailInput.value)) {
+                    emailError.textContent = 'Accepted emails only with @lets.study. Must be only one @';
+                    emailInput.classList.add('invalid');
+                    emailInput.classList.remove('valid');
+                } else {
+                    emailError.textContent = '';
+                    emailInput.classList.remove('invalid');
+                    emailInput.classList.add('valid');
+                }
+            });
+
+            document.querySelector('.registr__form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const name = nameInput.value;
+                const email = emailInput.value;
+                const selectedDate = dateInput.value;
+                const option = document.querySelector('input[name="form"]:checked').value;
+                const postId = new URLSearchParams(window.location.search).get('postId');
+
+                if (nameInput.classList.contains('valid') && emailInput.classList.contains('valid')) {
+                    try {
+                        const response = await fetch('/api/form/', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ name, email, selectedDate, option, postId, currentDate: today }), 
+                        });
+
+                        if (response.ok) {
+                            alert('Registration successful!');
+                            window.location.href = 'index.html'; 
+                        } else {
+                            alert('Registrations error.');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                    }
+                } else {
+                    alert('Fill out the form correctly.');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

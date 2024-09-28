@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Events</title>
+    <link rel="stylesheet" href="./css/style.min.css?_V=20240928095615" />
+  </head>
+  <body>
+    <section class="section">
+      <div class="container">
+        <div class="events">
+          <div class="events__title title">Events</div>
+
+          <div class="sort-options">
+            <label for="sortSelect">Sort by:</label>
+            <select id="sortSelect">
+              <option value="" selected disabled>Choose sorting...</option>
+              <option value="title">Title</option>
+              <option value="dateAsc">Date (Earliest first)</option>
+              <option value="dateDesc">Date (Latest first)</option>
+              <option value="organizer">Organizer</option>
+            </select>
+          </div>
+
+          <div class="events__list_w">
+            <div class="events__list"></div>
+          </div>
+
+          <div class="events__pagination">
+            <button class="pagination-nav" id="prevButton">Back</button>
+            <div class="page-numbers"></div>
+            <button class="pagination-nav" id="nextButton">Next</button>
+          </div>
+        </div>
+      </div>
+    </section>
+    <script>
+      let currentPage = 1;
+      const postsPerPage = 12;
+      let originalData = [];
+
+      function formatDate(dateString) {
+        const date = new Date(dateString);
+        const options = { year: "numeric", month: "long", day: "numeric" };
+        return date.toLocaleDateString("en-US", options);
+      }
+
+      async function loadPosts() {
+        try {
+          const response = await fetch("/api/index");
+          const data = await response.json();
+
+          originalData = data.map((post) => ({
+            ...post,
+            date: new Date(post.date),
+          }));
+
+          displayPosts(originalData);
+        } catch (error) {
+          console.error("Ошибка загрузки постов:", error);
+        }
+      }
+
+      function displayPosts(data) {
+        const postsContainer = document.querySelector(".events__list");
+        postsContainer.innerHTML = "";
+        const totalPosts = data.length;
+        const totalPages = Math.ceil(totalPosts / postsPerPage);
+
+        const startIndex = (currentPage - 1) * postsPerPage;
+        const endIndex = Math.min(startIndex + postsPerPage, totalPosts);
+
+        for (let i = startIndex; i < endIndex; i++) {
+          const post = data[i];
+          postsContainer.insertAdjacentHTML(
+            "beforeend",
+            `
+              <div class="events__item_w">
+                  <article class="events__item">
+                      <h2 class="events__item_title">${post.title}</h2>
+                      <div class="events__item_descr">${post.description}</div>
+                      <div class="events__item_event_date">${formatDate(
+                        post.date
+                      )}</div> 
+                      <div class="events__item_organizer">${
+                        post.organizer
+                      }</div>
+                      <div class="events__btn">
+                          <a href="registr.html?postId=${
+                            post._id
+                          }" class="events__registr_btn">Registr</a>
+                          <a href="registr_list.html?postId=${
+                            post._id
+                          }" class="events__view_btn">View</a>
+                      </div>
+                  </article>
+              </div>`
+          );
+        }
+
+        updatePagination(totalPages);
+      }
+
+      function updatePagination(totalPages) {
+        const pageNumbersContainer = document.querySelector(".page-numbers");
+        pageNumbersContainer.innerHTML = "";
+
+        for (let i = 1; i <= totalPages; i++) {
+          const button = document.createElement("button");
+          button.textContent = i;
+          button.className = "pagination-button";
+          button.disabled = i === currentPage;
+          button.onclick = () => {
+            currentPage = i;
+            displayPosts(sortPosts(originalData));
+          };
+          pageNumbersContainer.appendChild(button);
+        }
+
+        document.getElementById("prevButton").disabled = currentPage === 1;
+        document.getElementById("nextButton").disabled =
+          currentPage === totalPages;
+
+        document.querySelector("#prevButton").onclick = () => {
+          if (currentPage > 1) {
+            currentPage--;
+            displayPosts(sortPosts(originalData));
+          }
+        };
+
+        document.querySelector("#nextButton").onclick = () => {
+          if (currentPage < totalPages) {
+            currentPage++;
+            displayPosts(sortPosts(originalData));
+          }
+        };
+      }
+
+      function sortPosts(data) {
+        const sortSelect = document.getElementById("sortSelect").value;
+        let sortedData = [...data];
+
+        if (sortSelect) {
+          sortedData.sort((a, b) => {
+            if (sortSelect === "title") {
+              return a.title.localeCompare(b.title);
+            } else if (sortSelect === "dateAsc") {
+              return new Date(a.date) - new Date(b.date);
+            } else if (sortSelect === "dateDesc") {
+              return new Date(b.date) - new Date(a.date);
+            } else if (sortSelect === "organizer") {
+              return a.organizer.localeCompare(b.organizer);
+            }
+          });
+        }
+
+        return sortedData;
+      }
+
+      document.getElementById("sortSelect").addEventListener("change", () => {
+        currentPage = 1;
+        displayPosts(sortPosts(originalData));
+      });
+
+      window.onload = loadPosts;
+    </script>
+  </body>
+</html>
